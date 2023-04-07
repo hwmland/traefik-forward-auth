@@ -21,7 +21,7 @@ type OIDC struct {
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier
 
-	log MyLog
+	MyLog log
 }
 
 // Name returns the name of the provider
