@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"errors"
+	"net/http"
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
 )
