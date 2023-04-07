@@ -91,6 +91,10 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 	return rawIDToken, nil
 }
 
+type Groups struct {
+	groupsMembership []string `json:"groupsMembership"`
+}
+
 // GetUser uses the given token and returns a complete provider.User object
 func (o *OIDC) GetUser(token, _ string) (string, error) {
 	// Parse & Verify ID Token
@@ -104,9 +108,14 @@ func (o *OIDC) GetUser(token, _ string) (string, error) {
 	if err := idToken.Claims(&user); err != nil {
 		return "", err
 	}
-
-//	o.MyLog.Println("----------> OIDC.GetUser, idToken:", idToken)
 	o.MyLog.Println("----------> OIDC.GetUser, user:", user)
+
+	var groups Groups
+	if err := idToken.Claims(&groups); err != nil {
+		o.MyLog.Println("----------> OIDC.GetUser, err:", err)
+		return "", err
+	}
+	o.MyLog.Println("----------> OIDC.GetUser, groups:", groups)
 
 	return user.Email, nil
 }
