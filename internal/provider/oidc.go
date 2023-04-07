@@ -47,7 +47,7 @@ func (o *OIDC) Setup() error {
 
 	myLog := log.New(io.Discard, "ByMarek: ", log.Lmsgprefix|log.Ldate|log.Ltime)
 	myLog.SetOutput(os.Stdout)
-	myLog.Println("Haaaaaaaaaaaaaaaaaaleluja - aspon neco")
+	myLog.Println("----------> OIDC.Setup")
 	o.MyLog = myLog
 
 	// Create oauth2 config
@@ -86,6 +86,8 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 		return "", errors.New("Missing id_token")
 	}
 
+	o.MyLog.Println("----------> OIDC.ExchangeCode, token:", token, "rawIDToken:", rawIDToken)
+
 	return rawIDToken, nil
 }
 
@@ -96,6 +98,8 @@ func (o *OIDC) GetUser(token, _ string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	o.MyLog.Println("----------> OIDC.GetUser, idToken:", idToken)
 
 	// Extract custom claims
 	var user User
