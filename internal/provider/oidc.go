@@ -92,7 +92,7 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 }
 
 type Groups struct {
-	groupsMembership []string `json:"groupsMembership"`
+	Grp []string `json:"groups"`
 }
 
 // GetUser uses the given token and returns a complete provider.User object
@@ -115,7 +115,7 @@ func (o *OIDC) GetUser(token, _ string) (string, error) {
 		o.MyLog.Println("----------> OIDC.GetUser, err:", err)
 		return "", err
 	}
-	o.MyLog.Println("----------> OIDC.GetUser, groups:", groups)
+	o.MyLog.Println("----------> OIDC.GetUser, groups:", groups.Grp)
 
 	return user.Email, nil
 }
