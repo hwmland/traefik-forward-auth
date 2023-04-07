@@ -6,6 +6,7 @@ import (
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
 	"os"
+	"io"
 	"log"
 )
 
@@ -19,6 +20,8 @@ type OIDC struct {
 
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier
+
+	log MyLog
 }
 
 // Name returns the name of the provider
@@ -42,7 +45,7 @@ func (o *OIDC) Setup() error {
 		return err
 	}
 
-	myLog := log.New(io.Discard, config.Prefix + ": ", log.Lmsgprefix|log.Ldate|log.Ltime)
+	myLog := log.New(io.Discard, "ByMarek: ", log.Lmsgprefix|log.Ldate|log.Ltime)
 	myLog.SetOutput(os.Stdout)
 	myLog.Println("Haaaaaaaaaaaaaaaaaaleluja - aspon neco")
 	o.MyLog = myLog
