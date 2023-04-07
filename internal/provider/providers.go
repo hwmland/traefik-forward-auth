@@ -71,7 +71,7 @@ func (p *OAuthProvider) OAuthGetLoginURL(redirectURI, state string, r *http.Requ
 	config := p.ConfigCopy(redirectURI)
 
 	if p.ResourceCookie != "" {
-		resource := r.Header.Get("X-Forwarded-Method")
+		resource := r.Header.Get(p.ResourceCookie)
 		if resource != "" {
 			return config.AuthCodeURL(state, oauth2.SetAuthURLParam("resource", resource))
 		}
