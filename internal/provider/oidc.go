@@ -86,7 +86,7 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 		return "", errors.New("Missing id_token")
 	}
 
-	o.MyLog.Println("----------> OIDC.ExchangeCode, token:", token, "rawIDToken:", rawIDToken)
+	o.MyLog.Println("----------> OIDC.ExchangeCode, rawIDToken:", rawIDToken)
 
 	return rawIDToken, nil
 }
@@ -99,13 +99,14 @@ func (o *OIDC) GetUser(token, _ string) (string, error) {
 		return "", err
 	}
 
-	o.MyLog.Println("----------> OIDC.GetUser, idToken:", idToken)
-
 	// Extract custom claims
 	var user User
 	if err := idToken.Claims(&user); err != nil {
 		return "", err
 	}
+
+//	o.MyLog.Println("----------> OIDC.GetUser, idToken:", idToken)
+	o.MyLog.Println("----------> OIDC.GetUser, user:", user)
 
 	return user.Email, nil
 }
