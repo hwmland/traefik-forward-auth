@@ -5,6 +5,8 @@ import (
 	"errors"
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
+	"os"
+	"log"
 )
 
 // OIDC provider
@@ -40,11 +42,16 @@ func (o *OIDC) Setup() error {
 		return err
 	}
 
+	myLog := log.New(io.Discard, config.Prefix + ": ", log.Lmsgprefix|log.Ldate|log.Ltime)
+	myLog.SetOutput(os.Stdout)
+	myLog.Println("Haaaaaaaaaaaaaaaaaaleluja - aspon neco")
+
 	// Create oauth2 config
 	o.Config = &oauth2.Config{
 		ClientID:     o.ClientID,
 		ClientSecret: o.ClientSecret,
 		Endpoint:     o.provider.Endpoint(),
+		MyLog: myLog,
 
 		// "openid" is a required scope for OpenID Connect flows.
 		Scopes: []string{oidc.ScopeOpenID, "profile", "email"},
