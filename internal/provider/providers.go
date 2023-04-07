@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 	// "net/url"
 
 	"github.com/Jeffail/gabs/v2"
@@ -20,7 +21,7 @@ type Providers struct {
 // Provider is used to authenticate users
 type Provider interface {
 	Name() string
-	GetLoginURL(redirectURI, state string) string
+	GetLoginURL(redirectURI, state string, r *http.Request) string
 	ExchangeCode(redirectURI, code string) (string, error)
 	GetUser(token, UserPath string) (string, error)
 	Setup() error
@@ -51,6 +52,7 @@ func GetUser(r io.Reader, UserPath string) (string, error) {
 // OAuthProvider is a provider using the oauth2 library
 type OAuthProvider struct {
 	Resource string `long:"resource" env:"RESOURCE" description:"Optional resource indicator"`
+	ResourceCookie string `long:"resource-cookie" env:"RESOURCE_COOKIE" description:"Optional resource cookie indicator"`
 
 	Config *oauth2.Config
 	ctx    context.Context
@@ -65,10 +67,15 @@ func (p *OAuthProvider) ConfigCopy(redirectURI string) oauth2.Config {
 }
 
 // OAuthGetLoginURL provides a base "GetLoginURL" for proiders using OAauth2
-func (p *OAuthProvider) OAuthGetLoginURL(redirectURI, state string) string {
+func (p *OAuthProvider) OAuthGetLoginURL(redirectURI, state string, r *http.Request) string {
 	config := p.ConfigCopy(redirectURI)
 
-	if p.Resource != "" {
+	if p.ResourceCookie != "" {
+		resource := r.Header.Get("X-Forwarded-Method")
+		if resource != "" {
+			return config.AuthCodeURL(state, oauth2.SetAuthURLParam("resource", resource))
+		}
+	} else if p.Resource != "" {
 		return config.AuthCodeURL(state, oauth2.SetAuthURLParam("resource", p.Resource))
 	}
 
