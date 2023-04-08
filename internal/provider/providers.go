@@ -37,16 +37,17 @@ type token struct {
 }
 
 // GetUser extracts a UserID located at the (dot notation) path (UserPath) in the json io.Reader of the UserURL
-func GetUser(r io.Reader, UserPath string) (string, error) {
+func GetUser(r io.Reader, UserPath string) (*User, error) {
 	json, err := gabs.ParseJSONBuffer(r)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if !json.ExistsP(UserPath) {
-		return "", fmt.Errorf("no such user path: '%s' in the UserURL response: %s", UserPath, string(json.Bytes()))
+		return nil, fmt.Errorf("no such user path: '%s' in the UserURL response: %s", UserPath, string(json.Bytes()))
 	}
-	return fmt.Sprintf("%v", json.Path(UserPath).Data()), nil
+	var user = fmt.Sprintf("%v", json.Path(UserPath).Data())
+	return &User{ User: user, Groups: nil, }, nil
 }
 
 // OAuthProvider is a provider using the oauth2 library
