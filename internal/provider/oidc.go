@@ -8,7 +8,6 @@ import (
 	"os"
 	"io"
 	"log"
-	"exp"
 )
 
 // OIDC provider
@@ -92,6 +91,16 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 	return rawIDToken, nil
 }
 
+// Keys returns the keys of the map m.
+// The keys will be in an indeterminate order.
+func mapKeys[M ~map[K]V, K comparable, V any](m M) []K {
+	r := make([]K, 0, len(m))
+	for k := range m {
+		r = append(r, k)
+	}
+	return r
+}
+
 // GetUser uses the given token and returns a complete provider.User object
 func (o *OIDC) GetUser(token, _ string) (*User, error) {
 	// Parse & Verify ID Token
@@ -117,6 +126,6 @@ func (o *OIDC) GetUser(token, _ string) (*User, error) {
 			groupMap[group] = true
 		}
 	}
-	uniqueGrops := maps.Keys(groupMap)
+	uniqueGrops := mapKeys(groupMap)
 	return &User{User: user.Email, Groups: uniqueGrops, }, nil
 }
