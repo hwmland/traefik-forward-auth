@@ -33,14 +33,19 @@ func TestAuthValidateCookie(t *testing.T) {
 	if assert.Error(err) {
 		assert.Equal("Invalid cookie format", err.Error())
 	}
-	c.Value = "1|2|3|4"
+	c.Value = "1|2|3"
+	_, err = ValidateCookie(r, c)
+	if assert.Error(err) {
+		assert.Equal("Invalid cookie format", err.Error())
+	}
+	c.Value = "1|2|3|4|5"
 	_, err = ValidateCookie(r, c)
 	if assert.Error(err) {
 		assert.Equal("Invalid cookie format", err.Error())
 	}
 
 	// Should catch invalid mac
-	c.Value = "MQ==|2|3"
+	c.Value = "MQ==|2|3|4"
 	_, err = ValidateCookie(r, c)
 	if assert.Error(err) {
 		assert.Equal("Invalid cookie mac", err.Error())
