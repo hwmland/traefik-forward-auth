@@ -113,7 +113,7 @@ func (s *Server) AuthHandler(providerName, rule string) http.HandlerFunc {
 		}
 
 		// Validate cookie
-		user, err := ValidateCookie(r, c)
+		user, group, err := ValidateCookie(r, c)
 		if err != nil {
 			if err.Error() == "Cookie has expired" {
 				logger.Info("Cookie has expired")
@@ -133,9 +133,19 @@ func (s *Server) AuthHandler(providerName, rule string) http.HandlerFunc {
 			return
 		}
 
+		if config.GroupHeader != "" {
+			requiredGroup = r.Header.Get(config.GroupHeader)
+			if requiredGroup != "" && requiredGroup != group {
+				logger.WithField("group", escapeNewlines(group)).Warn("Invalid user (group)")
+				http.Error(w, "User is not authorized", 401)
+				return
+			}
+		}
+
 		// Valid request
 		logger.Debug("Allowing valid request")
 		w.Header().Set("X-Forwarded-User", user)
+		w.Header().Set("X-Forwarded-Group", group)
 		w.WriteHeader(200)
 	}
 }
@@ -216,8 +226,18 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 			return
 		}
 
+		requiredGroup := ""
+		if config.GroupHeader != "" {
+			requiredGroup = r.Header.Get(config.GroupHeader)
+			if requiredGroup != "" && user.Groups == nil {
+				logger.WithField("group", escapeNewlines(group)).Warn("Invalid user (group)")
+				http.Error(w, "User is not authorized", 401)
+				return
+			}
+		}
+
 		// Generate cookie
-		http.SetCookie(w, MakeCookie(r, user.User, "MyGroup"))
+		http.SetCookie(w, MakeCookie(r, user.User, requiredGroup))
 		logger.WithFields(logrus.Fields{
 			"provider": providerName,
 			"redirect": redirect,

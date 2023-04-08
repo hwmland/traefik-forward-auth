@@ -20,41 +20,42 @@ import (
 
 // ValidateCookie verifies that a cookie matches the expected format of:
 // Cookie = hash(secret, cookie domain, user, group, expires)|expires|user|group
-func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
+// returns: user, group, err
+func ValidateCookie(r *http.Request, c *http.Cookie) (string, string, error) {
 	parts := strings.Split(c.Value, "|")
 
 	if len(parts) != 4 {
-		return "", errors.New("Invalid cookie format")
+		return "", "", errors.New("Invalid cookie format")
 	}
 
 	mac, err := base64.URLEncoding.DecodeString(parts[0])
 	if err != nil {
-		return "", errors.New("Unable to decode cookie mac")
+		return "", "", errors.New("Unable to decode cookie mac")
 	}
 
 	expectedSignature := cookieSignature(r, parts[2], parts[3], parts[1])
 	expected, err := base64.URLEncoding.DecodeString(expectedSignature)
 	if err != nil {
-		return "", errors.New("Unable to generate mac")
+		return "", "", errors.New("Unable to generate mac")
 	}
 
 	// Valid token?
 	if !hmac.Equal(mac, expected) {
-		return "", errors.New("Invalid cookie mac")
+		return "", "", errors.New("Invalid cookie mac")
 	}
 
 	expires, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
-		return "", errors.New("Unable to parse cookie expiry")
+		return "", "", errors.New("Unable to parse cookie expiry")
 	}
 
 	// Has it expired?
 	if time.Unix(expires, 0).Before(time.Now()) {
-		return "", errors.New("Cookie has expired")
+		return "", "", errors.New("Cookie has expired")
 	}
 
 	// Looks valid
-	return parts[2], nil
+	return parts[2], parts[3], nil
 }
 
 // ValidateUser checks if the given user matches either a whitelisted
