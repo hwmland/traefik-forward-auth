@@ -8,7 +8,7 @@ import (
 	"os"
 	"io"
 	"log"
-	"map"
+	"maps"
 )
 
 // OIDC provider
