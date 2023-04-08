@@ -109,5 +109,13 @@ func (o *OIDC) GetUser(token, _ string) (*User, error) {
 	}
 	o.MyLog.Println("----------> OIDC.GetUser, user:", user)
 
-	return &User{User: user.Email, Groups: user.Groups, }, nil
+	groupMap := make(map[string]bool)
+	for _, groupFull := range user.Groups {
+		for _, group in range groupFull {
+			o.MyLog.Println("----------> OIDC.GetUser, group:", group)
+			gropMap[group] = true
+		}
+	}
+	uniqueGrops := maps.Keys(gropMap)
+	return &User{User: user.Email, Groups: uniqueGrops, }, nil
 }
