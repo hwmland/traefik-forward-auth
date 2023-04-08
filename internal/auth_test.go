@@ -65,6 +65,7 @@ func TestAuthValidateCookie(t *testing.T) {
 	email, group, err := ValidateCookie(r, c)
 	assert.Nil(err, "valid request should not return an error")
 	assert.Equal("test@test.com", email, "valid request should return user email")
+	assert.Equal("mygoup", group, "valid request should return user group")
 }
 
 func TestAuthValidateUser(t *testing.T) {
