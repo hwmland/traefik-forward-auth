@@ -135,7 +135,7 @@ func (s *Server) AuthHandler(providerName, rule string) http.HandlerFunc {
 
 		if config.GroupHeader != "" {
 			requiredGroup := r.Header.Get(config.GroupHeader)
-			logger.WithFields(logrus.Fields{"groupHeader": config.groupHeader, "requiredGroup": requiredGroup, "group": group, }).Info("AuthHandler-GroupHeader configured")
+			logger.WithFields(logrus.Fields{"groupHeader": config.GroupHeader, "requiredGroup": requiredGroup, "group": group, }).Info("AuthHandler-GroupHeader configured")
 			if requiredGroup != "" && requiredGroup != group {
 				logger.WithField("group", escapeNewlines(group)).Warn("Invalid user (group)")
 				http.Error(w, "User is not authorized", 401)
@@ -230,7 +230,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		requiredGroup := ""
 		if config.GroupHeader != "" {
 			requiredGroup = r.Header.Get(config.GroupHeader)
-			logger.WithFields(logrus.Fields{"groupHeader": config.groupHeader, "requiredGroup": requiredGroup, }).Info("AuthCallbackHandler-GroupHeader configured")
+			logger.WithFields(logrus.Fields{"groupHeader": config.GroupHeader, "requiredGroup": requiredGroup, }).Info("AuthCallbackHandler-GroupHeader configured")
 			if requiredGroup != "" && user.Groups == nil {
 				logger.WithField("group", escapeNewlines(requiredGroup)).Warn("Invalid user (group)")
 				http.Error(w, "User is not authorized", 401)
