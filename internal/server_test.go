@@ -98,16 +98,16 @@ func TestServerAuthHandlerInvalid(t *testing.T) {
 
 	// Should catch invalid cookie
 	req = newDefaultHttpRequest("/foo")
-	c := MakeCookie(req, "test@example.com")
+	c := MakeCookie(req, "test@example.com", "mygroup")
 	parts = strings.Split(c.Value, "|")
-	c.Value = fmt.Sprintf("bad|%s|%s", parts[1], parts[2])
+	c.Value = fmt.Sprintf("bad|%s|%s|%s", parts[1], parts[2], parts[3])
 
 	res, _ = doHttpRequest(req, c)
 	assert.Equal(401, res.StatusCode, "invalid cookie should not be authorised")
 
 	// Should validate email
 	req = newDefaultHttpRequest("/foo")
-	c = MakeCookie(req, "test@example.com")
+	c = MakeCookie(req, "test@example.com", "mygroup")
 	config.Domains = []string{"test.com"}
 
 	res, _ = doHttpRequest(req, c)
@@ -122,7 +122,7 @@ func TestServerAuthHandlerExpired(t *testing.T) {
 
 	// Should redirect expired cookie
 	req := newHTTPRequest("GET", "http://example.com/foo")
-	c := MakeCookie(req, "test@example.com")
+	c := MakeCookie(req, "test@example.com", "mygroup")
 	res, _ := doHttpRequest(req, c)
 	require.Equal(t, 307, res.StatusCode, "request with expired cookie should be redirected")
 
@@ -148,7 +148,7 @@ func TestServerAuthHandlerValid(t *testing.T) {
 
 	// Should allow valid request email
 	req := newHTTPRequest("GET", "http://example.com/foo")
-	c := MakeCookie(req, "test@example.com")
+	c := MakeCookie(req, "test@example.com", "mygroup")
 	config.Domains = []string{}
 
 	res, _ := doHttpRequest(req, c)
