@@ -17,22 +17,23 @@ type Providers struct {
 	GenericOAuth GenericOAuth `group:"Generic OAuth2 Provider" namespace:"generic-oauth" env-namespace:"GENERIC_OAUTH"`
 }
 
+// User + groups information
+type User struct {
+	User 		string
+	Groups		[]string
+}
+
 // Provider is used to authenticate users
 type Provider interface {
 	Name() string
 	GetLoginURL(redirectURI, state string) string
 	ExchangeCode(redirectURI, code string) (string, error)
-	GetUser(token, UserPath string) (string, error)
+	GetUser(token, UserPath string) (User, error)
 	Setup() error
 }
 
 type token struct {
 	Token string `json:"access_token"`
-}
-
-// User is the authenticated user
-type xxUser struct {
-	Email string `json:"email"`
 }
 
 // GetUser extracts a UserID located at the (dot notation) path (UserPath) in the json io.Reader of the UserURL
