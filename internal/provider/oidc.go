@@ -96,7 +96,7 @@ func (o *OIDC) GetUser(token, _ string) (User, error) {
 	// Parse & Verify ID Token
 	idToken, err := o.verifier.Verify(o.ctx, token)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Extract custom claims
@@ -105,7 +105,7 @@ func (o *OIDC) GetUser(token, _ string) (User, error) {
 		Groups []string `json:"groups"`
 	}
 	if err := idToken.Claims(&user); err != nil {
-		return "", err
+		return nil, err
 	}
 	o.MyLog.Println("----------> OIDC.GetUser, user:", user)
 
