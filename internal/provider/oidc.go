@@ -5,9 +5,6 @@ import (
 	"errors"
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
-	"os"
-	"io"
-	"log"
 	str "strings"
 )
 
@@ -21,8 +18,6 @@ type OIDC struct {
 
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier
-
-	MyLog *log.Logger
 }
 
 // Name returns the name of the provider
@@ -46,11 +41,6 @@ func (o *OIDC) Setup() error {
 		return err
 	}
 
-	myLog := log.New(io.Discard, "ByMarek: ", log.Lmsgprefix|log.Ldate|log.Ltime)
-	myLog.SetOutput(os.Stdout)
-	myLog.Println("----------> OIDC.Setup")
-	o.MyLog = myLog
-
 	// Create oauth2 config
 	o.Config = &oauth2.Config{
 		ClientID:     o.ClientID,
@@ -58,7 +48,7 @@ func (o *OIDC) Setup() error {
 		Endpoint:     o.provider.Endpoint(),
 	
 		// "openid" is a required scope for OpenID Connect flows.
-		Scopes: []string{oidc.ScopeOpenID, "profile", "email"},
+		Scopes: []string{oidc.ScopeOpenID, "profile", "email", "groups"},
 	}
 
 	// Create OIDC verifier
@@ -86,8 +76,6 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 	if !ok {
 		return "", errors.New("Missing id_token")
 	}
-
-	o.MyLog.Println("----------> OIDC.ExchangeCode, rawIDToken:", rawIDToken)
 
 	return rawIDToken, nil
 }
@@ -118,17 +106,16 @@ func (o *OIDC) GetUser(token, _ string) (*User, error) {
 	if err := idToken.Claims(&user); err != nil {
 		return nil, err
 	}
-	o.MyLog.Println("----------> OIDC.GetUser, user:", user)
 
 	groupMap := make(map[string]bool)
 	for _, groupFull := range user.Groups {
 		for _, group := range str.Split(groupFull, "/") {
 			if group != "" {
-				o.MyLog.Println("----------> OIDC.GetUser, group:", group)
 				groupMap[group] = true
 			}
 		}
 	}
 	uniqueGrops := mapKeys(groupMap)
+
 	return &User{User: user.Email, Groups: uniqueGrops, }, nil
 }
