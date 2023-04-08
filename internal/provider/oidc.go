@@ -111,7 +111,7 @@ func (o *OIDC) GetUser(token, _ string) (*User, error) {
 
 	groupMap := make(map[string]bool)
 	for _, groupFull := range user.Groups {
-		for _, group in range groupFull {
+		for _, group := range groupFull.Split("/") {
 			o.MyLog.Println("----------> OIDC.GetUser, group:", group)
 			gropMap[group] = true
 		}
