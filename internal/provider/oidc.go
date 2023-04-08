@@ -8,6 +8,7 @@ import (
 	"os"
 	"io"
 	"log"
+	str "strings"
 )
 
 // OIDC provider
@@ -121,7 +122,7 @@ func (o *OIDC) GetUser(token, _ string) (*User, error) {
 
 	groupMap := make(map[string]bool)
 	for _, groupFull := range user.Groups {
-		for _, group := range groupFull.Split("/") {
+		for _, group := range str.Split(groupFull, "/") {
 			o.MyLog.Println("----------> OIDC.GetUser, group:", group)
 			groupMap[group] = true
 		}
