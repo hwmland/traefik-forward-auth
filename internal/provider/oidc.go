@@ -91,9 +91,9 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 	return rawIDToken, nil
 }
 
-type Groups struct {
-	Grp []string `json:"groups"`
-}
+// type Groups struct {
+// 	Grp []string `json:"groups"`
+// }
 
 // GetUser uses the given token and returns a complete provider.User object
 func (o *OIDC) GetUser(token, _ string) (string, error) {
@@ -103,19 +103,36 @@ func (o *OIDC) GetUser(token, _ string) (string, error) {
 		return "", err
 	}
 
+	// // Extract custom claims
+	// var user User
+	// if err := idToken.Claims(&user); err != nil {
+	// 	return "", err
+	// }
+	// o.MyLog.Println("----------> OIDC.GetUser, user:", user)
+
+	// var groups Groups
+	// if err := idToken.Claims(&groups); err != nil {
+	// 	o.MyLog.Println("----------> OIDC.GetUser, err:", err)
+	// 	return "", err
+	// }
+	// o.MyLog.Println("----------> OIDC.GetUser, groups:", groups.Grp)
+	
 	// Extract custom claims
-	var user User
+	var user struct {
+		Email string `json:"email"`
+		Groups []string `json:"groups"`
+	}
 	if err := idToken.Claims(&user); err != nil {
 		return "", err
 	}
 	o.MyLog.Println("----------> OIDC.GetUser, user:", user)
 
-	var groups Groups
-	if err := idToken.Claims(&groups); err != nil {
-		o.MyLog.Println("----------> OIDC.GetUser, err:", err)
-		return "", err
-	}
-	o.MyLog.Println("----------> OIDC.GetUser, groups:", groups.Grp)
+	// var groups Groups
+	// if err := idToken.Claims(&groups); err != nil {
+	// 	o.MyLog.Println("----------> OIDC.GetUser, err:", err)
+	// 	return "", err
+	// }
+	// o.MyLog.Println("----------> OIDC.GetUser, groups:", groups.Grp)
 
 	return user.Email, nil
 }

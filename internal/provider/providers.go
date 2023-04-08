@@ -31,7 +31,7 @@ type token struct {
 }
 
 // User is the authenticated user
-type User struct {
+type xxUser struct {
 	Email string `json:"email"`
 }
 
