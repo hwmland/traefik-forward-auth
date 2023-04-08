@@ -92,7 +92,7 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 }
 
 // GetUser uses the given token and returns a complete provider.User object
-func (o *OIDC) GetUser(token, _ string) (User, error) {
+func (o *OIDC) GetUser(token, _ string) (*User, error) {
 	// Parse & Verify ID Token
 	idToken, err := o.verifier.Verify(o.ctx, token)
 	if err != nil {
@@ -109,5 +109,5 @@ func (o *OIDC) GetUser(token, _ string) (User, error) {
 	}
 	o.MyLog.Println("----------> OIDC.GetUser, user:", user)
 
-	return User{User: user.Email, Groups: user.Groups, }, nil
+	return &User{User: user.Email, Groups: user.Groups, }, nil
 }
