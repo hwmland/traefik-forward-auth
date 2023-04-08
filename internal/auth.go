@@ -19,11 +19,11 @@ import (
 // Request Validation
 
 // ValidateCookie verifies that a cookie matches the expected format of:
-// Cookie = hash(secret, cookie domain, user, expires)|expires|user
+// Cookie = hash(secret, cookie domain, user, group, expires)|expires|user|group
 func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
 	parts := strings.Split(c.Value, "|")
 
-	if len(parts) != 3 {
+	if len(parts) != 4 {
 		return "", errors.New("Invalid cookie format")
 	}
 
@@ -32,7 +32,7 @@ func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
 		return "", errors.New("Unable to decode cookie mac")
 	}
 
-	expectedSignature := cookieSignature(r, parts[2], parts[1])
+	expectedSignature := cookieSignature(r, parts[2], parts[3], parts[1])
 	expected, err := base64.URLEncoding.DecodeString(expectedSignature)
 	if err != nil {
 		return "", errors.New("Unable to generate mac")
@@ -194,10 +194,10 @@ func useAuthDomain(r *http.Request) (bool, string) {
 // Cookie methods
 
 // MakeCookie creates an auth cookie
-func MakeCookie(r *http.Request, user string) *http.Cookie {
+func MakeCookie(r *http.Request, user string, group string) *http.Cookie {
 	expires := cookieExpiry()
-	mac := cookieSignature(r, user, fmt.Sprintf("%d", expires.Unix()))
-	value := fmt.Sprintf("%s|%d|%s", mac, expires.Unix(), user)
+	mac := cookieSignature(r, user, group, fmt.Sprintf("%d", expires.Unix()))
+	value := fmt.Sprintf("%s|%d|%s|%s", mac, expires.Unix(), user, group)
 
 	return &http.Cookie{
 		Name:     config.CookieName,
@@ -345,10 +345,11 @@ func matchCookieDomains(domain string) (bool, string) {
 }
 
 // Create cookie hmac
-func cookieSignature(r *http.Request, email, expires string) string {
+func cookieSignature(r *http.Request, email, group string, expires string) string {
 	hash := hmac.New(sha256.New, config.Secret)
 	hash.Write([]byte(cookieDomain(r)))
 	hash.Write([]byte(email))
+	hash.Write([]byte(group))
 	hash.Write([]byte(expires))
 	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }

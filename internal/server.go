@@ -217,7 +217,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		}
 
 		// Generate cookie
-		http.SetCookie(w, MakeCookie(r, user.User))
+		http.SetCookie(w, MakeCookie(r, user.User, "MyGroup"))
 		logger.WithFields(logrus.Fields{
 			"provider": providerName,
 			"redirect": redirect,
