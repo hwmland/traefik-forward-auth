@@ -443,13 +443,13 @@ func TestAuthValidateCSRFCookie(t *testing.T) {
 	// Should require 32 char string
 	state = ""
 	c.Value = ""
-	valid, _, _, err := ValidateCSRFCookie(c, state)
+	valid, _, _, _, err := ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
 		assert.Equal("Invalid CSRF cookie value", err.Error())
 	}
 	c.Value = "123456789012345678901234567890123"
-	valid, _, _, err = ValidateCSRFCookie(c, state)
+	valid, _, _, _, err = ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
 		assert.Equal("Invalid CSRF cookie value", err.Error())
@@ -458,19 +458,20 @@ func TestAuthValidateCSRFCookie(t *testing.T) {
 	// Should require provider
 	state = "12345678901234567890123456789012:99"
 	c.Value = "12345678901234567890123456789012"
-	valid, _, _, err = ValidateCSRFCookie(c, state)
+	valid, _, _, _, err = ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
 		assert.Equal("Invalid CSRF state format", err.Error())
 	}
 
 	// Should allow valid state
-	state = "12345678901234567890123456789012:p99:url123"
+	state = "12345678901234567890123456789012:p99:grp:url123"
 	c.Value = "12345678901234567890123456789012"
-	valid, provider, redirect, err := ValidateCSRFCookie(c, state)
+	valid, provider, group, redirect, err := ValidateCSRFCookie(c, state)
 	assert.True(valid, "valid request should return valid")
 	assert.Nil(err, "valid request should not return an error")
 	assert.Equal("p99", provider, "valid request should return correct provider")
+	assert.Equal("grp", group, "valid request should return correct group")
 	assert.Equal("url123", redirect, "valid request should return correct redirect")
 }
 
@@ -484,7 +485,7 @@ func TestValidateState(t *testing.T) {
 		assert.Equal("Invalid CSRF state value", err.Error())
 	}
 	// Should pass this state
-	state = "12345678901234567890123456789012:p99:url123"
+	state = "12345678901234567890123456789012:p99:grp:url123"
 	err = ValidateState(state)
 	assert.Nil(err, "valid request should not return an error")
 }
@@ -497,18 +498,18 @@ func TestMakeState(t *testing.T) {
 
 	// Test with google
 	p := provider.Google{}
-	state := MakeState(r, &p, "nonce")
-	assert.Equal("nonce:google:http://example.com/hello", state)
+	state := MakeState(r, &p, "nonce", "grp")
+	assert.Equal("nonce:google:grp:http://example.com/hello", state)
 
 	// Test with OIDC
 	p2 := provider.OIDC{}
-	state = MakeState(r, &p2, "nonce")
-	assert.Equal("nonce:oidc:http://example.com/hello", state)
+	state = MakeState(r, &p2, "nonce", "grp")
+	assert.Equal("nonce:oidc:grp:http://example.com/hello", state)
 
 	// Test with Generic OAuth
 	p3 := provider.GenericOAuth{}
-	state = MakeState(r, &p3, "nonce")
-	assert.Equal("nonce:generic-oauth:http://example.com/hello", state)
+	state = MakeState(r, &p3, "nonce", "grp")
+	assert.Equal("nonce:generic-oauth:grp:http://example.com/hello", state)
 }
 
 func TestAuthNonce(t *testing.T) {
