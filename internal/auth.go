@@ -267,19 +267,19 @@ func FindCSRFCookie(r *http.Request, state string) (c *http.Cookie, err error) {
 // ValidateCSRFCookie validates the csrf cookie against state
 func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider string, group string, redirect string, err error) {
 	if len(c.Value) != 32 {
-		return false, "", "", errors.New("Invalid CSRF cookie value")
+		return false, "", "", "", errors.New("Invalid CSRF cookie value")
 	}
 
 	// Check nonce match
 	if c.Value != state[:32] {
-		return false, "", "", errors.New("CSRF cookie does not match state")
+		return false, "", "", "", errors.New("CSRF cookie does not match state")
 	}
 
 	// Extract provider
 	params := state[33:]
 	split := strings.Index(params, ":")
 	if split == -1 {
-		return false, "", "", errors.New("Invalid CSRF state format")
+		return false, "", "", "", errors.New("Invalid CSRF state format")
 	}
 
 	// Valid, return provider and redirect
