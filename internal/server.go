@@ -133,15 +133,14 @@ func (s *Server) AuthHandler(providerName, rule string) http.HandlerFunc {
 			return
 		}
 
-		if config.GroupHeader != "" {
-			requiredGroup := r.Header.Get(config.GroupHeader)
-			logger.WithFields(logrus.Fields{"groupHeader": config.GroupHeader, "requiredGroup": requiredGroup, "group": group, }).Info("AuthHandler-GroupHeader configured")
+
+			requiredGroup := s.getRequiredGroup(r)
 			if requiredGroup != "" && requiredGroup != group {
 				logger.WithField("group", escapeNewlines(group)).Warn("Invalid user (group)")
 				http.Error(w, "User is not authorized", 401)
 				return
 			}
-		}
+
 
 		// Valid request
 		logger.Debug("Allowing valid request")
@@ -185,7 +184,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 			http.Error(w, "Not authorized", 401)
 			return
 		}
-		logger.WithFields(logrus.Fields{"providerName": providerName, "group": group, "redirect": redirect, }).Info("----->AuthCallbackHandler state")
+
 		// Get provider
 		p, err := config.GetConfiguredProvider(providerName)
 		if err != nil {
@@ -229,7 +228,6 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 
 		// jsem v callback - pracuju ze statusu
 		if group != "" {
-			logger.WithFields(logrus.Fields{"groupHeader": config.GroupHeader, "group": group, }).Info("AuthCallbackHandler-GroupHeader configured")
 			if group != "" && user.Groups == nil { 
 				logger.WithField("group", escapeNewlines(group)).Warn("Invalid user (group)")
 				http.Error(w, "User is not authorized", 401)
