@@ -83,10 +83,10 @@ func TestServerAuthHandlerInvalid(t *testing.T) {
 	state, exists := qs["state"]
 	require.True(t, exists)
 	require.Len(t, state, 1)
-	parts := strings.SplitN(state[0], ":", 3)
-	require.Len(t, parts, 3)
+	parts := strings.SplitN(state[0], ":", 4)
+	require.Len(t, parts, 4)
 	assert.Equal("google", parts[1])
-	assert.Equal("http://example.com/foo", parts[2])
+	assert.Equal("http://example.com/foo", parts[3])
 
 	// Should warn as using http without insecure cookie
 	logs := hook.AllEntries()
