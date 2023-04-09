@@ -82,13 +82,13 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 
 // Keys returns the keys of the map m.
 // The keys will be in an indeterminate order.
-func mapKeys[M ~map[K]V, K comparable, V any](m M) []K {
-	r := make([]K, 0, len(m))
-	for k := range m {
-		r = append(r, k)
-	}
-	return r
-}
+// func mapKeys[M ~map[K]V, K comparable, V any](m M) []K {
+// 	r := make([]K, 0, len(m))
+// 	for k := range m {
+// 		r = append(r, k)
+// 	}
+// 	return r
+// }
 
 // GetUser uses the given token and returns a complete provider.User object
 func (o *OIDC) GetUser(token, _ string) (*User, error) {
@@ -101,21 +101,21 @@ func (o *OIDC) GetUser(token, _ string) (*User, error) {
 	// Extract custom claims
 	var user struct {
 		Email string `json:"email"`
-		Groups []string `json:"groups"`
+		Roles []string `json:"userroles"`
 	}
 	if err := idToken.Claims(&user); err != nil {
 		return nil, err
 	}
 
-	groupMap := make(map[string]bool)
-	for _, groupFull := range user.Groups {
-		for _, group := range str.Split(groupFull, "/") {
-			if group != "" {
-				groupMap[group] = true
-			}
-		}
-	}
-	uniqueGrops := mapKeys(groupMap)
+	// roleMap := make(map[string]bool)
+	// for _, roleFull := range user.Roles {
+	// 	for _, role := range str.Split(roleFull, ",") {
+	// 		if group != "" {
+	// 			groupMap[group] = true
+	// 		}
+	// 	}
+	// }
+	// uniqueGrops := mapKeys(groupMap)
 
-	return &User{User: user.Email, Groups: uniqueGrops, }, nil
+	return &User{User: user.Email, Roles: userroles, }, nil
 }

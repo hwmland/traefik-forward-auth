@@ -17,10 +17,10 @@ type Providers struct {
 	GenericOAuth GenericOAuth `group:"Generic OAuth2 Provider" namespace:"generic-oauth" env-namespace:"GENERIC_OAUTH"`
 }
 
-// User + groups information
+// User + roles information
 type User struct {
 	User 		string
-	Groups		[]string
+	Roles		[]string
 }
 
 // Provider is used to authenticate users
@@ -47,7 +47,7 @@ func GetUser(r io.Reader, UserPath string) (*User, error) {
 		return nil, fmt.Errorf("no such user path: '%s' in the UserURL response: %s", UserPath, string(json.Bytes()))
 	}
 	var user = fmt.Sprintf("%v", json.Path(UserPath).Data())
-	return &User{ User: user, Groups: nil, }, nil
+	return &User{ User: user, Roles: nil, }, nil
 }
 
 // OAuthProvider is a provider using the oauth2 library

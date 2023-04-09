@@ -43,7 +43,7 @@ type Config struct {
 	Whitelist              CommaSeparatedList   `long:"whitelist" env:"WHITELIST" env-delim:"," description:"Only allow given UserID, comma separated, can be set multiple times"`
 	Port                   int                  `long:"port" env:"PORT" default:"4181" description:"Port to listen on"`
 
-	GroupHeader            string               `long:"group-header" env:"GROUP_HEADER" description:"Header element with required group. Tested only with OIDC"`
+	RoleHeader            string               `long:"role-header" env:"ROLE_HEADER" description:"Header element with required role. Tested only with OIDC"`
 
 	Providers provider.Providers `group:"providers" namespace:"providers" env-namespace:"PROVIDERS"`
 	Rules     map[string]*Rule   `long:"rule.<name>.<param>" description:"Rule definitions, param can be: \"action\", \"rule\" or \"provider\""`

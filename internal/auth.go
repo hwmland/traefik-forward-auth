@@ -19,8 +19,8 @@ import (
 // Request Validation
 
 // ValidateCookie verifies that a cookie matches the expected format of:
-// Cookie = hash(secret, cookie domain, user, group, expires)|expires|user|group
-// returns: user, group, err
+// Cookie = hash(secret, cookie domain, user, role, expires)|expires|user|role
+// returns: user, role, err
 func ValidateCookie(r *http.Request, c *http.Cookie) (string, string, error) {
 	parts := strings.Split(c.Value, "|")
 
@@ -195,10 +195,10 @@ func useAuthDomain(r *http.Request) (bool, string) {
 // Cookie methods
 
 // MakeCookie creates an auth cookie
-func MakeCookie(r *http.Request, user string, group string) *http.Cookie {
+func MakeCookie(r *http.Request, user string, role string) *http.Cookie {
 	expires := cookieExpiry()
-	mac := cookieSignature(r, user, group, fmt.Sprintf("%d", expires.Unix()))
-	value := fmt.Sprintf("%s|%d|%s|%s", mac, expires.Unix(), user, group)
+	mac := cookieSignature(r, user, role, fmt.Sprintf("%d", expires.Unix()))
+	value := fmt.Sprintf("%s|%d|%s|%s", mac, expires.Unix(), user, role)
 
 	return &http.Cookie{
 		Name:     config.CookieName,
@@ -265,8 +265,8 @@ func FindCSRFCookie(r *http.Request, state string) (c *http.Cookie, err error) {
 }
 
 // ValidateCSRFCookie validates the csrf cookie against state
-// returns: valid, providerName, group, redirect, err
-func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider string, group string, redirect string, err error) {
+// returns: valid, providerName, role, redirect, err
+func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider string, role string, redirect string, err error) {
 	if len(c.Value) != 32 {
 		return false, "", "", "", errors.New("Invalid CSRF cookie value")
 	}
@@ -288,8 +288,8 @@ func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider stri
 }
 
 // MakeState generates a state value
-func MakeState(r *http.Request, p provider.Provider, nonce string, group string) string {
-	return fmt.Sprintf("%s:%s:%s:%s", nonce, p.Name(), group, returnUrl(r))
+func MakeState(r *http.Request, p provider.Provider, nonce string, role string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", nonce, p.Name(), role, returnUrl(r))
 }
 
 // ValidateState checks whether the state is of right length.
@@ -347,11 +347,11 @@ func matchCookieDomains(domain string) (bool, string) {
 }
 
 // Create cookie hmac
-func cookieSignature(r *http.Request, email, group string, expires string) string {
+func cookieSignature(r *http.Request, email, role string, expires string) string {
 	hash := hmac.New(sha256.New, config.Secret)
 	hash.Write([]byte(cookieDomain(r)))
 	hash.Write([]byte(email))
-	hash.Write([]byte(group))
+	hash.Write([]byte(role))
 	hash.Write([]byte(expires))
 	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }
