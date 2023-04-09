@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
-	str "strings"
+//	str "strings"
 )
 
 // OIDC provider
