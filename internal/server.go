@@ -182,7 +182,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 				"error":       err,
 				"csrf_cookie": c,
 			}).Warn("Error validating csrf cookie")
-			http.Error(w, "Not authorized", 402)
+			http.Error(w, "Not authorized", 401)
 			return
 		}
 		logger.WithFields(logrus.Fields{"providerName": providerName, "group": group, "redirect": redirect, }).Info("----->AuthCallbackHandler state")
@@ -194,7 +194,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 				"csrf_cookie": c,
 				"provider":    providerName,
 			}).Warn("Invalid provider in csrf cookie")
-			http.Error(w, "Not authorized", 403)
+			http.Error(w, "Not authorized", 401)
 			return
 		}
 
@@ -207,7 +207,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 			logger.WithFields(logrus.Fields{
 				"receieved_redirect": redirect,
 			}).Warnf("Invalid redirect in CSRF. %v", err)
-			http.Error(w, "Not authorized", 404)
+			http.Error(w, "Not authorized", 401)
 			return
 		}
 
