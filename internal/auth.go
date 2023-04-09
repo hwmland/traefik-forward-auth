@@ -278,7 +278,7 @@ func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider stri
 
 	// Extract provider
 	params := state[33:]
-	splits := strings.Split(params, ":")
+	splits := strings.SplitN(params, ":", 3)
 	if len(splits) != 3 {
 		return false, "", "", "", errors.New("Invalid CSRF state format")
 	}

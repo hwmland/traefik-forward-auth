@@ -234,7 +234,7 @@ func TestServerAuthCallback(t *testing.T) {
 	assert.Equal(401, res.StatusCode, "auth callback with invalid provider shouldn't be authorised")
 
 	// Should redirect valid request
-	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":google:http://example.com")
+	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":google:grp:http://example.com")
 	c = MakeCSRFCookie(req, nonce)
 	res, _ = doHttpRequest(req, c)
 	require.Equal(307, res.StatusCode, "valid auth callback should be allowed")
@@ -264,7 +264,7 @@ func TestServerAuthCallbackExchangeFailure(t *testing.T) {
 	}
 
 	// Should handle failed code exchange
-	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://example.com")
+	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:grp:http://example.com")
 	c := MakeCSRFCookie(req, "12345678901234567890123456789012")
 	res, _ := doHttpRequest(req, c)
 	assert.Equal(503, res.StatusCode, "auth callback should handle failed code exchange")
@@ -291,7 +291,7 @@ func TestServerAuthCallbackUserFailure(t *testing.T) {
 	}
 
 	// Should handle failed user request
-	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:http://example.com")
+	req := newDefaultHttpRequest("/_oauth?state=12345678901234567890123456789012:google:grp:http://example.com")
 	c := MakeCSRFCookie(req, "12345678901234567890123456789012")
 	res, _ := doHttpRequest(req, c)
 	assert.Equal(503, res.StatusCode, "auth callback should handle failed user request")
