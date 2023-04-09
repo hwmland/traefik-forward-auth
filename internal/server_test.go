@@ -234,7 +234,7 @@ func TestServerAuthCallback(t *testing.T) {
 	assert.Equal(401, res.StatusCode, "auth callback with invalid provider shouldn't be authorised")
 
 	// Should redirect valid request
-	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":google:grp:http://example.com")
+	req = newHTTPRequest("GET", "http://example.com/_oauth?state="+nonce+":google::http://example.com")
 	c = MakeCSRFCookie(req, nonce)
 	res, _ = doHttpRequest(req, c)
 	require.Equal(307, res.StatusCode, "valid auth callback should be allowed")
