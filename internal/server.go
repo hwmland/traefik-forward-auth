@@ -232,7 +232,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 			logger.WithFields(logrus.Fields{"groupHeader": config.GroupHeader, "group": group, }).Info("AuthCallbackHandler-GroupHeader configured")
 			if group != "" && user.Groups == nil { 
 				logger.WithField("group", escapeNewlines(group)).Warn("Invalid user (group)")
-				http.Error(w, "User is not authorized", 405)
+				http.Error(w, "User is not authorized", 401)
 				return
 			}
 		}
