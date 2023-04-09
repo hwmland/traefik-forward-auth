@@ -176,7 +176,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		}
 
 		// Validate CSRF cookie against state
-		valid, providerName, redirect, err := ValidateCSRFCookie(c, state)
+		valid, providerName, group, redirect, err := ValidateCSRFCookie(c, state)
 		if !valid {
 			logger.WithFields(logrus.Fields{
 				"error":       err,
@@ -185,7 +185,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 			http.Error(w, "Not authorized", 401)
 			return
 		}
-
+		logger.WithFields(logrus.Fields{"providerName": providerName, "group": group, "redirect": redirect, }).Info("----->AuthCallbackHandler state")
 		// Get provider
 		p, err := config.GetConfiguredProvider(providerName)
 		if err != nil {
@@ -227,19 +227,18 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 			return
 		}
 
-		requiredGroup := ""
-		if config.GroupHeader != "" {
-			requiredGroup = r.Header.Get(config.GroupHeader)
-			logger.WithFields(logrus.Fields{"groupHeader": config.GroupHeader, "requiredGroup": requiredGroup, }).Info("AuthCallbackHandler-GroupHeader configured")
-			if requiredGroup != "" && user.Groups == nil {
-				logger.WithField("group", escapeNewlines(requiredGroup)).Warn("Invalid user (group)")
+		// jsem v callback - pracuju ze statusu
+		if group != "" {
+			logger.WithFields(logrus.Fields{"groupHeader": config.GroupHeader, "group": group, }).Info("AuthCallbackHandler-GroupHeader configured")
+			if group != "" && user.Groups == nil { 
+				logger.WithField("group", escapeNewlines(group)).Warn("Invalid user (group)")
 				http.Error(w, "User is not authorized", 401)
 				return
 			}
 		}
 
 		// Generate cookie
-		http.SetCookie(w, MakeCookie(r, user.User, requiredGroup))
+		http.SetCookie(w, MakeCookie(r, user.User, group))
 		logger.WithFields(logrus.Fields{
 			"provider": providerName,
 			"redirect": redirect,
@@ -294,13 +293,18 @@ func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *ht
 	}
 
 	// Forward them on
-	loginURL := p.GetLoginURL(redirectUri(r), MakeState(r, p, nonce))
+	loginURL := p.GetLoginURL(redirectUri(r), MakeState(r, p, nonce, s.getRequiredGroup(r)))
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 
 	logger.WithFields(logrus.Fields{
 		"csrf_cookie": csrf,
 		"login_url":   loginURL,
 	}).Debug("Set CSRF cookie and redirected to provider login url")
+}
+
+func (s *Server) getRequiredGroup(r *http.Request) string {
+	if config.GroupHeader == "" return ""
+	return r.Header.Get(config.GroupHeader)
 }
 
 func (s *Server) logger(r *http.Request, handler, rule, msg string) *logrus.Entry {

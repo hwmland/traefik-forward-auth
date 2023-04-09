@@ -265,7 +265,7 @@ func FindCSRFCookie(r *http.Request, state string) (c *http.Cookie, err error) {
 }
 
 // ValidateCSRFCookie validates the csrf cookie against state
-func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider string, redirect string, err error) {
+func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider string, group string, redirect string, err error) {
 	if len(c.Value) != 32 {
 		return false, "", "", errors.New("Invalid CSRF cookie value")
 	}
@@ -283,17 +283,17 @@ func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider stri
 	}
 
 	// Valid, return provider and redirect
-	return true, params[:split], params[split+1:], nil
+	return true, params[:split], params[split+1:], params[split+2:], nil
 }
 
 // MakeState generates a state value
-func MakeState(r *http.Request, p provider.Provider, nonce string) string {
-	return fmt.Sprintf("%s:%s:%s", nonce, p.Name(), returnUrl(r))
+func MakeState(r *http.Request, p provider.Provider, nonce string, group string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", nonce, p.Name(), group, returnUrl(r))
 }
 
 // ValidateState checks whether the state is of right length.
 func ValidateState(state string) error {
-	if len(state) < 34 {
+	if len(state) < 35 {
 		return errors.New("Invalid CSRF state value")
 	}
 	return nil
