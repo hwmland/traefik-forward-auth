@@ -303,7 +303,9 @@ func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *ht
 }
 
 func (s *Server) getRequiredGroup(r *http.Request) string {
-	if config.GroupHeader == "" return ""
+	if config.GroupHeader == "" {
+		return ""
+	}
 	return r.Header.Get(config.GroupHeader)
 }
 
