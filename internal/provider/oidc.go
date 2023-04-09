@@ -117,5 +117,5 @@ func (o *OIDC) GetUser(token, _ string) (*User, error) {
 	// }
 	// uniqueGrops := mapKeys(groupMap)
 
-	return &User{User: user.Email, Roles: userroles, }, nil
+	return &User{User: user.Email, Roles: usre.Roles, }, nil
 }
