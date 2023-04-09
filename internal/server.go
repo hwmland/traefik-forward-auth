@@ -28,6 +28,15 @@ func escapeNewlines(data string) string {
 	return escapedData
 }
 
+func Contains[T comparable](s []T, e T) bool {
+    for _, v := range s {
+        if v == e {
+            return true
+        }
+    }
+    return false
+}
+
 func (s *Server) buildRoutes() {
 	var err error
 	s.muxer, err = mux.NewMuxer()
@@ -113,7 +122,7 @@ func (s *Server) AuthHandler(providerName, rule string) http.HandlerFunc {
 		}
 
 		// Validate cookie
-		user, err := ValidateCookie(r, c)
+		user, role, err := ValidateCookie(r, c)
 		if err != nil {
 			if err.Error() == "Cookie has expired" {
 				logger.Info("Cookie has expired")
@@ -133,9 +142,19 @@ func (s *Server) AuthHandler(providerName, rule string) http.HandlerFunc {
 			return
 		}
 
+
+			requiredRole := s.getRequiredRole(r)
+			if requiredRole != "" && requiredRole != role {
+				logger.WithField("role", escapeNewlines(role)).Warn("Invalid user (role)")
+				http.Error(w, "User is not authorized", 401)
+				return
+			}
+
+
 		// Valid request
 		logger.Debug("Allowing valid request")
 		w.Header().Set("X-Forwarded-User", user)
+		w.Header().Set("X-Forwarded-Role", role)
 		w.WriteHeader(200)
 	}
 }
@@ -165,7 +184,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 		}
 
 		// Validate CSRF cookie against state
-		valid, providerName, redirect, err := ValidateCSRFCookie(c, state)
+		valid, providerName, role, redirect, err := ValidateCSRFCookie(c, state)
 		if !valid {
 			logger.WithFields(logrus.Fields{
 				"error":       err,
@@ -208,6 +227,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 			return
 		}
 
+		// logger.WithField("token", token).Debug("------>")
 		// Get user
 		user, err := p.GetUser(token, config.UserPath)
 		if err != nil {
@@ -216,8 +236,17 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 			return
 		}
 
+		// check if required role (if any) is included in received roles
+		if role != "" {
+			if role != "" && (user.Roles == nil || !Contains(user.Roles, role)) { 
+				logger.WithField("role", escapeNewlines(role)).Warn("Invalid user (role)")
+				http.Error(w, "User is not authorized", 401)
+				return
+			}
+		}
+
 		// Generate cookie
-		http.SetCookie(w, MakeCookie(r, user))
+		http.SetCookie(w, MakeCookie(r, user.User, role))
 		logger.WithFields(logrus.Fields{
 			"provider": providerName,
 			"redirect": redirect,
@@ -272,13 +301,20 @@ func (s *Server) authRedirect(logger *logrus.Entry, w http.ResponseWriter, r *ht
 	}
 
 	// Forward them on
-	loginURL := p.GetLoginURL(redirectUri(r), MakeState(r, p, nonce))
+	loginURL := p.GetLoginURL(redirectUri(r), MakeState(r, p, nonce, s.getRequiredRole(r)))
 	http.Redirect(w, r, loginURL, http.StatusTemporaryRedirect)
 
 	logger.WithFields(logrus.Fields{
 		"csrf_cookie": csrf,
 		"login_url":   loginURL,
 	}).Debug("Set CSRF cookie and redirected to provider login url")
+}
+
+func (s *Server) getRequiredRole(r *http.Request) string {
+	if config.RoleHeader == "" {
+		return ""
+	}
+	return r.Header.Get(config.RoleHeader)
 }
 
 func (s *Server) logger(r *http.Request, handler, rule, msg string) *logrus.Entry {

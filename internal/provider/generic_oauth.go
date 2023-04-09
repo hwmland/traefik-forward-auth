@@ -66,10 +66,10 @@ func (o *GenericOAuth) ExchangeCode(redirectURI, code string) (string, error) {
 }
 
 // GetUser uses the given token and returns a UserID
-func (o *GenericOAuth) GetUser(token, UserPath string) (string, error) {
+func (o *GenericOAuth) GetUser(token, UserPath string) (*User, error) {
 	req, err := http.NewRequest("GET", o.UserURL, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if o.TokenStyle == "header" {
@@ -83,7 +83,7 @@ func (o *GenericOAuth) GetUser(token, UserPath string) (string, error) {
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer res.Body.Close()
 

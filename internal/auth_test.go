@@ -24,42 +24,48 @@ func TestAuthValidateCookie(t *testing.T) {
 
 	// Should require 3 parts
 	c.Value = ""
-	_, err := ValidateCookie(r, c)
+	_, _, err := ValidateCookie(r, c)
 	if assert.Error(err) {
 		assert.Equal("Invalid cookie format", err.Error())
 	}
 	c.Value = "1|2"
-	_, err = ValidateCookie(r, c)
+	_, _, err = ValidateCookie(r, c)
 	if assert.Error(err) {
 		assert.Equal("Invalid cookie format", err.Error())
 	}
-	c.Value = "1|2|3|4"
-	_, err = ValidateCookie(r, c)
+	c.Value = "1|2|3"
+	_, _, err = ValidateCookie(r, c)
+	if assert.Error(err) {
+		assert.Equal("Invalid cookie format", err.Error())
+	}
+	c.Value = "1|2|3|4|5"
+	_, _, err = ValidateCookie(r, c)
 	if assert.Error(err) {
 		assert.Equal("Invalid cookie format", err.Error())
 	}
 
 	// Should catch invalid mac
-	c.Value = "MQ==|2|3"
-	_, err = ValidateCookie(r, c)
+	c.Value = "MQ==|2|3|4"
+	_, _, err = ValidateCookie(r, c)
 	if assert.Error(err) {
 		assert.Equal("Invalid cookie mac", err.Error())
 	}
 
 	// Should catch expired
 	config.Lifetime = time.Second * time.Duration(-1)
-	c = MakeCookie(r, "test@test.com")
-	_, err = ValidateCookie(r, c)
+	c = MakeCookie(r, "test@test.com", "myrole")
+	_, _, err = ValidateCookie(r, c)
 	if assert.Error(err) {
 		assert.Equal("Cookie has expired", err.Error())
 	}
 
 	// Should accept valid cookie
 	config.Lifetime = time.Second * time.Duration(10)
-	c = MakeCookie(r, "test@test.com")
-	email, err := ValidateCookie(r, c)
+	c = MakeCookie(r, "test@test.com", "myrole")
+	email, role, err := ValidateCookie(r, c)
 	assert.Nil(err, "valid request should not return an error")
 	assert.Equal("test@test.com", email, "valid request should return user email")
+	assert.Equal("myrole", role, "valid request should return user role")
 }
 
 func TestAuthValidateUser(t *testing.T) {
@@ -371,11 +377,11 @@ func TestAuthMakeCookie(t *testing.T) {
 	r, _ := http.NewRequest("GET", "http://app.example.com", nil)
 	r.Header.Add("X-Forwarded-Host", "app.example.com")
 
-	c := MakeCookie(r, "test@example.com")
+	c := MakeCookie(r, "test@example.com", "myrole")
 	assert.Equal("_forward_auth", c.Name)
 	parts := strings.Split(c.Value, "|")
-	assert.Len(parts, 3, "cookie should be 3 parts")
-	_, err := ValidateCookie(r, c)
+	assert.Len(parts, 4, "cookie should be 4 parts")
+	_, _, err := ValidateCookie(r, c)
 	assert.Nil(err, "should generate valid cookie")
 	assert.Equal("/", c.Path)
 	assert.Equal("app.example.com", c.Domain)
@@ -386,7 +392,7 @@ func TestAuthMakeCookie(t *testing.T) {
 
 	config.CookieName = "testname"
 	config.InsecureCookie = true
-	c = MakeCookie(r, "test@example.com")
+	c = MakeCookie(r, "test@example.com", "myrole")
 	assert.Equal("testname", c.Name)
 	assert.False(c.Secure)
 }
@@ -437,13 +443,13 @@ func TestAuthValidateCSRFCookie(t *testing.T) {
 	// Should require 32 char string
 	state = ""
 	c.Value = ""
-	valid, _, _, err := ValidateCSRFCookie(c, state)
+	valid, _, _, _, err := ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
 		assert.Equal("Invalid CSRF cookie value", err.Error())
 	}
 	c.Value = "123456789012345678901234567890123"
-	valid, _, _, err = ValidateCSRFCookie(c, state)
+	valid, _, _, _, err = ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
 		assert.Equal("Invalid CSRF cookie value", err.Error())
@@ -452,20 +458,21 @@ func TestAuthValidateCSRFCookie(t *testing.T) {
 	// Should require provider
 	state = "12345678901234567890123456789012:99"
 	c.Value = "12345678901234567890123456789012"
-	valid, _, _, err = ValidateCSRFCookie(c, state)
+	valid, _, _, _, err = ValidateCSRFCookie(c, state)
 	assert.False(valid)
 	if assert.Error(err) {
 		assert.Equal("Invalid CSRF state format", err.Error())
 	}
 
 	// Should allow valid state
-	state = "12345678901234567890123456789012:p99:url123"
+	state = "12345678901234567890123456789012:p99:grp:http://example.com"
 	c.Value = "12345678901234567890123456789012"
-	valid, provider, redirect, err := ValidateCSRFCookie(c, state)
+	valid, provider, role, redirect, err := ValidateCSRFCookie(c, state)
 	assert.True(valid, "valid request should return valid")
 	assert.Nil(err, "valid request should not return an error")
 	assert.Equal("p99", provider, "valid request should return correct provider")
-	assert.Equal("url123", redirect, "valid request should return correct redirect")
+	assert.Equal("grp", role, "valid request should return correct role")
+	assert.Equal("http://example.com", redirect, "valid request should return correct redirect")
 }
 
 func TestValidateState(t *testing.T) {
@@ -478,7 +485,7 @@ func TestValidateState(t *testing.T) {
 		assert.Equal("Invalid CSRF state value", err.Error())
 	}
 	// Should pass this state
-	state = "12345678901234567890123456789012:p99:url123"
+	state = "12345678901234567890123456789012:p99:grp:url123"
 	err = ValidateState(state)
 	assert.Nil(err, "valid request should not return an error")
 }
@@ -491,18 +498,18 @@ func TestMakeState(t *testing.T) {
 
 	// Test with google
 	p := provider.Google{}
-	state := MakeState(r, &p, "nonce")
-	assert.Equal("nonce:google:http://example.com/hello", state)
+	state := MakeState(r, &p, "nonce", "grp")
+	assert.Equal("nonce:google:grp:http://example.com/hello", state)
 
 	// Test with OIDC
 	p2 := provider.OIDC{}
-	state = MakeState(r, &p2, "nonce")
-	assert.Equal("nonce:oidc:http://example.com/hello", state)
+	state = MakeState(r, &p2, "nonce", "grp")
+	assert.Equal("nonce:oidc:grp:http://example.com/hello", state)
 
 	// Test with Generic OAuth
 	p3 := provider.GenericOAuth{}
-	state = MakeState(r, &p3, "nonce")
-	assert.Equal("nonce:generic-oauth:http://example.com/hello", state)
+	state = MakeState(r, &p3, "nonce", "grp")
+	assert.Equal("nonce:generic-oauth:grp:http://example.com/hello", state)
 }
 
 func TestAuthNonce(t *testing.T) {

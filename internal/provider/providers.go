@@ -17,12 +17,18 @@ type Providers struct {
 	GenericOAuth GenericOAuth `group:"Generic OAuth2 Provider" namespace:"generic-oauth" env-namespace:"GENERIC_OAUTH"`
 }
 
+// User + roles information
+type User struct {
+	User 		string
+	Roles		[]string
+}
+
 // Provider is used to authenticate users
 type Provider interface {
 	Name() string
 	GetLoginURL(redirectURI, state string) string
 	ExchangeCode(redirectURI, code string) (string, error)
-	GetUser(token, UserPath string) (string, error)
+	GetUser(token, UserPath string) (*User, error)
 	Setup() error
 }
 
@@ -30,22 +36,18 @@ type token struct {
 	Token string `json:"access_token"`
 }
 
-// User is the authenticated user
-type User struct {
-	Email string `json:"email"`
-}
-
 // GetUser extracts a UserID located at the (dot notation) path (UserPath) in the json io.Reader of the UserURL
-func GetUser(r io.Reader, UserPath string) (string, error) {
+func GetUser(r io.Reader, UserPath string) (*User, error) {
 	json, err := gabs.ParseJSONBuffer(r)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if !json.ExistsP(UserPath) {
-		return "", fmt.Errorf("no such user path: '%s' in the UserURL response: %s", UserPath, string(json.Bytes()))
+		return nil, fmt.Errorf("no such user path: '%s' in the UserURL response: %s", UserPath, string(json.Bytes()))
 	}
-	return fmt.Sprintf("%v", json.Path(UserPath).Data()), nil
+	var user = fmt.Sprintf("%v", json.Path(UserPath).Data())
+	return &User{ User: user, Roles: nil, }, nil
 }
 
 // OAuthProvider is a provider using the oauth2 library

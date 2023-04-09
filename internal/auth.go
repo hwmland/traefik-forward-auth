@@ -19,42 +19,43 @@ import (
 // Request Validation
 
 // ValidateCookie verifies that a cookie matches the expected format of:
-// Cookie = hash(secret, cookie domain, user, expires)|expires|user
-func ValidateCookie(r *http.Request, c *http.Cookie) (string, error) {
+// Cookie = hash(secret, cookie domain, user, role, expires)|expires|user|role
+// returns: user, role, err
+func ValidateCookie(r *http.Request, c *http.Cookie) (string, string, error) {
 	parts := strings.Split(c.Value, "|")
 
-	if len(parts) != 3 {
-		return "", errors.New("Invalid cookie format")
+	if len(parts) != 4 {
+		return "", "", errors.New("Invalid cookie format")
 	}
 
 	mac, err := base64.URLEncoding.DecodeString(parts[0])
 	if err != nil {
-		return "", errors.New("Unable to decode cookie mac")
+		return "", "", errors.New("Unable to decode cookie mac")
 	}
 
-	expectedSignature := cookieSignature(r, parts[2], parts[1])
+	expectedSignature := cookieSignature(r, parts[2], parts[3], parts[1])
 	expected, err := base64.URLEncoding.DecodeString(expectedSignature)
 	if err != nil {
-		return "", errors.New("Unable to generate mac")
+		return "", "", errors.New("Unable to generate mac")
 	}
 
 	// Valid token?
 	if !hmac.Equal(mac, expected) {
-		return "", errors.New("Invalid cookie mac")
+		return "", "", errors.New("Invalid cookie mac")
 	}
 
 	expires, err := strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
-		return "", errors.New("Unable to parse cookie expiry")
+		return "", "", errors.New("Unable to parse cookie expiry")
 	}
 
 	// Has it expired?
 	if time.Unix(expires, 0).Before(time.Now()) {
-		return "", errors.New("Cookie has expired")
+		return "", "", errors.New("Cookie has expired")
 	}
 
 	// Looks valid
-	return parts[2], nil
+	return parts[2], parts[3], nil
 }
 
 // ValidateUser checks if the given user matches either a whitelisted
@@ -194,10 +195,10 @@ func useAuthDomain(r *http.Request) (bool, string) {
 // Cookie methods
 
 // MakeCookie creates an auth cookie
-func MakeCookie(r *http.Request, user string) *http.Cookie {
+func MakeCookie(r *http.Request, user string, role string) *http.Cookie {
 	expires := cookieExpiry()
-	mac := cookieSignature(r, user, fmt.Sprintf("%d", expires.Unix()))
-	value := fmt.Sprintf("%s|%d|%s", mac, expires.Unix(), user)
+	mac := cookieSignature(r, user, role, fmt.Sprintf("%d", expires.Unix()))
+	value := fmt.Sprintf("%s|%d|%s|%s", mac, expires.Unix(), user, role)
 
 	return &http.Cookie{
 		Name:     config.CookieName,
@@ -264,35 +265,36 @@ func FindCSRFCookie(r *http.Request, state string) (c *http.Cookie, err error) {
 }
 
 // ValidateCSRFCookie validates the csrf cookie against state
-func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider string, redirect string, err error) {
+// returns: valid, providerName, role, redirect, err
+func ValidateCSRFCookie(c *http.Cookie, state string) (valid bool, provider string, role string, redirect string, err error) {
 	if len(c.Value) != 32 {
-		return false, "", "", errors.New("Invalid CSRF cookie value")
+		return false, "", "", "", errors.New("Invalid CSRF cookie value")
 	}
 
 	// Check nonce match
 	if c.Value != state[:32] {
-		return false, "", "", errors.New("CSRF cookie does not match state")
+		return false, "", "", "", errors.New("CSRF cookie does not match state")
 	}
 
 	// Extract provider
 	params := state[33:]
-	split := strings.Index(params, ":")
-	if split == -1 {
-		return false, "", "", errors.New("Invalid CSRF state format")
+	splits := strings.SplitN(params, ":", 3)
+	if len(splits) != 3 {
+		return false, "", "", "", errors.New("Invalid CSRF state format")
 	}
 
 	// Valid, return provider and redirect
-	return true, params[:split], params[split+1:], nil
+	return true, splits[0], splits[1], splits[2], nil
 }
 
 // MakeState generates a state value
-func MakeState(r *http.Request, p provider.Provider, nonce string) string {
-	return fmt.Sprintf("%s:%s:%s", nonce, p.Name(), returnUrl(r))
+func MakeState(r *http.Request, p provider.Provider, nonce string, role string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", nonce, p.Name(), role, returnUrl(r))
 }
 
 // ValidateState checks whether the state is of right length.
 func ValidateState(state string) error {
-	if len(state) < 34 {
+	if len(state) < 35 {
 		return errors.New("Invalid CSRF state value")
 	}
 	return nil
@@ -345,10 +347,11 @@ func matchCookieDomains(domain string) (bool, string) {
 }
 
 // Create cookie hmac
-func cookieSignature(r *http.Request, email, expires string) string {
+func cookieSignature(r *http.Request, email, role string, expires string) string {
 	hash := hmac.New(sha256.New, config.Secret)
 	hash.Write([]byte(cookieDomain(r)))
 	hash.Write([]byte(email))
+	hash.Write([]byte(role))
 	hash.Write([]byte(expires))
 	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }

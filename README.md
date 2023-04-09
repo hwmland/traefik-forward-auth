@@ -1,6 +1,20 @@
 
 # Traefik Forward Auth
 
+## Fork on fork notes
+I added possibility to ask OIDC for user roles and check them against user role specified inside request header.
+
+There is new setting:
+```
+Usage:
+  traefik-forward-auth [OPTIONS]
+
+Application Options:
+  --role-header=                        Header containing required role. [$ROLE_HEADER]
+```
+When role header is not specified, role is not checked.
+
+
 A minimal forward authentication service that provides OAuth/SSO login and authentication for the [traefik](https://github.com/containous/traefik) reverse proxy/load balancer.
 
 ## Fork notes

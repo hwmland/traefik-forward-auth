@@ -45,7 +45,7 @@ func (o *OIDC) Setup() error {
 		ClientID:     o.ClientID,
 		ClientSecret: o.ClientSecret,
 		Endpoint:     o.provider.Endpoint(),
-
+	
 		// "openid" is a required scope for OpenID Connect flows.
 		Scopes: []string{oidc.ScopeOpenID, "profile", "email"},
 	}
@@ -80,18 +80,21 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 }
 
 // GetUser uses the given token and returns a complete provider.User object
-func (o *OIDC) GetUser(token, _ string) (string, error) {
+func (o *OIDC) GetUser(token, _ string) (*User, error) {
 	// Parse & Verify ID Token
 	idToken, err := o.verifier.Verify(o.ctx, token)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Extract custom claims
-	var user User
+	var user struct {
+		Email string `json:"email"`
+		Roles []string `json:"userroles"`
+	}
 	if err := idToken.Claims(&user); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return user.Email, nil
+	return &User{User: user.Email, Roles: user.Roles, }, nil
 }
