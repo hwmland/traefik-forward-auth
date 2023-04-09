@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"slices"
 
 	"github.com/hwmland/traefik-forward-auth/internal/provider"
 	"github.com/sirupsen/logrus"
@@ -27,6 +26,15 @@ func escapeNewlines(data string) string {
 	escapedData := strings.Replace(data, "\n", "", -1)
 	escapedData = strings.Replace(escapedData, "\r", "", -1)
 	return escapedData
+}
+
+func Contains[T comparable](s []T, e T) bool {
+    for _, v := range s {
+        if v == e {
+            return true
+        }
+    }
+    return false
 }
 
 func (s *Server) buildRoutes() {
@@ -229,7 +237,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 
 		// check if required group (if any) is included in received groups
 		if group != "" {
-			if group != "" && (user.Groups == nil || !slices.Contains(user.Groups, group)) { 
+			if group != "" && (user.Groups == nil || !Contains(user.Groups, group)) { 
 				logger.WithField("group", escapeNewlines(group)).Warn("Invalid user (group)")
 				http.Error(w, "User is not authorized", 401)
 				return
