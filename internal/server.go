@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"slices"
 
 	"github.com/hwmland/traefik-forward-auth/internal/provider"
 	"github.com/sirupsen/logrus"
@@ -226,9 +227,9 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 			return
 		}
 
-		// jsem v callback - pracuju ze statusu
+		// check if required group (if any) is included in received groups
 		if group != "" {
-			if group != "" && user.Groups == nil { 
+			if group != "" && (user.Groups == nil || !slices.Contains(user.Groups, group)) { 
 				logger.WithField("group", escapeNewlines(group)).Warn("Invalid user (group)")
 				http.Error(w, "User is not authorized", 401)
 				return
