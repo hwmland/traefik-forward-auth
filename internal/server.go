@@ -227,6 +227,7 @@ func (s *Server) AuthCallbackHandler() http.HandlerFunc {
 			return
 		}
 
+		logger.WithField("token": token).Debug("------>")
 		// Get user
 		user, err := p.GetUser(token, config.UserPath)
 		if err != nil {
