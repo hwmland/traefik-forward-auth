@@ -465,14 +465,14 @@ func TestAuthValidateCSRFCookie(t *testing.T) {
 	}
 
 	// Should allow valid state
-	state = "12345678901234567890123456789012:p99:grp:url123"
+	state = "12345678901234567890123456789012:p99:grp:http://example.com"
 	c.Value = "12345678901234567890123456789012"
 	valid, provider, group, redirect, err := ValidateCSRFCookie(c, state)
 	assert.True(valid, "valid request should return valid")
 	assert.Nil(err, "valid request should not return an error")
 	assert.Equal("p99", provider, "valid request should return correct provider")
 	assert.Equal("grp", group, "valid request should return correct group")
-	assert.Equal("url123", redirect, "valid request should return correct redirect")
+	assert.Equal("http://example.com", redirect, "valid request should return correct redirect")
 }
 
 func TestValidateState(t *testing.T) {
