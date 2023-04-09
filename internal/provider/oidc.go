@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
-//	str "strings"
 )
 
 // OIDC provider
@@ -80,16 +79,6 @@ func (o *OIDC) ExchangeCode(redirectURI, code string) (string, error) {
 	return rawIDToken, nil
 }
 
-// Keys returns the keys of the map m.
-// The keys will be in an indeterminate order.
-// func mapKeys[M ~map[K]V, K comparable, V any](m M) []K {
-// 	r := make([]K, 0, len(m))
-// 	for k := range m {
-// 		r = append(r, k)
-// 	}
-// 	return r
-// }
-
 // GetUser uses the given token and returns a complete provider.User object
 func (o *OIDC) GetUser(token, _ string) (*User, error) {
 	// Parse & Verify ID Token
@@ -106,16 +95,6 @@ func (o *OIDC) GetUser(token, _ string) (*User, error) {
 	if err := idToken.Claims(&user); err != nil {
 		return nil, err
 	}
-
-	// roleMap := make(map[string]bool)
-	// for _, roleFull := range user.Roles {
-	// 	for _, role := range str.Split(roleFull, ",") {
-	// 		if group != "" {
-	// 			groupMap[group] = true
-	// 		}
-	// 	}
-	// }
-	// uniqueGrops := mapKeys(groupMap)
 
 	return &User{User: user.Email, Roles: user.Roles, }, nil
 }
